@@ -8,6 +8,11 @@ Based on [typenoob/nxbt](https://github.com/typenoob/nxbt) `develop` at
 
 ## [Unreleased]
 
+### Added
+- While a controller exists, nxbt blocks system suspend (a logind "sleep"
+  inhibitor via `systemd-inhibit`) so long macros aren't cut off. The screen
+  can still blank and lock. The inhibitor ends with nxbt, even if it crashes.
+
 ### Security
 - Never set file capabilities on the Python interpreter. Previously every
   `nxbt` run as root called `setcap cap_net_admin,cap_net_bind_service+eip`
