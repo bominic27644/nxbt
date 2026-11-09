@@ -24,6 +24,19 @@ DIRECT_INPUT_IDLE_PACKET = {
         "RS_RIGHT": False,
         "RS_DOWN": False,
     },
+    #Motion Data
+    #unit is Gs (1 G is 9.80m/s^2
+    "ACCEL" : {
+        "X_VALUE": 0,
+        "Y_VALUE": 0,
+        "Z_VALUE": 0,
+    },
+    #unit is deg/s
+    "GYRO": {
+        "PITCH": 0,
+        "ROLL": 0,
+        "YAW": 0,
+    },
     # Dpad
     "DPAD_UP": False,
     "DPAD_LEFT": False,
@@ -275,6 +288,8 @@ class InputParser:
             "R_STICK",
         )
 
+        imu_data = self.parse_motion_data(controller_input["ACCEL"], controller_input["GYRO"])
+
         # Converting binary strings to ints
         upper_byte = int("".join(upper), 2)
         shared_byte = int("".join(shared), 2)
@@ -283,6 +298,7 @@ class InputParser:
         self.protocol.set_button_inputs(upper_byte, shared_byte, lower_byte)
         self.protocol.set_left_stick_inputs(stick_left)
         self.protocol.set_right_stick_inputs(stick_right)
+        self.protocol.set_imu_data(imu_data)
 
         return controller_input
 
@@ -476,5 +492,23 @@ class InputParser:
 
         return converted_values
 
+    def parse_motion_data(self, accel, gyro):
+        #these should be in the standard units, so convert them into raw values the switch can read
+        accel_x = int(round(accel["X_VALUE"] / 0.000244))
+        accel_y = int(round(accel["Y_VALUE"] / 0.000244))
+        accel_z = int(round(accel["Z_VALUE"] / 0.000244))
+        gyro_pitch = int(round(gyro["PITCH"] / 0.070))
+        gyro_roll = int(round(gyro["ROLL"] / 0.070))
+        gyro_yaw = int(round(gyro["YAW"] / 0.070))
+        imu_data = []
+        i = 0
+        while i < 3:
+            for each in [accel_x, accel_y, accel_z, gyro_pitch, gyro_roll, gyro_yaw]:
+                imu_bytes = each.to_bytes(2, byteorder="little", signed=True)
+                imu_data.append(imu_bytes[0])
+                imu_data.append(imu_bytes[1])
+            i = i + 1
+
+        return imu_data
     def reassign_protocol(self, protocol):
         self.protocol = protocol

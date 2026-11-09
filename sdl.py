@@ -1,13 +1,16 @@
+from ctypes import c_bool
+
 from nxbt.nxbt import Nxbt, PRO_CONTROLLER, DIRECT_INPUT_PACKET
 import sdl3
 import sys
 import ctypes
+import math
 
 class Sdl:
     def __init__(
         self,
     ):
-        if not sdl3.SDL_Init(sdl3.SDL_INIT_GAMEPAD):
+        if not sdl3.SDL_Init(sdl3.SDL_INIT_GAMEPAD | sdl3.SDL_INIT_SENSOR):
             print("SDL Init failed: {sdl3.SDL_GetError().decode()}", file=sys.stderr)
         self.opened_gamepads = {}
         self.running = True
@@ -37,6 +40,12 @@ class Sdl:
                         instance_id = event.gdevice.which
                         gamepad_ptr = sdl3.SDL_OpenGamepad(instance_id)
                         if gamepad_ptr:
+                            if sdl3.SDL_GamepadHasSensor(gamepad_ptr, sdl3.SDL_SENSOR_ACCEL):
+                                print("Accelerometer found!")
+                                sdl3.SDL_SetGamepadSensorEnabled(gamepad_ptr, sdl3.SDL_SENSOR_ACCEL, c_bool(True))
+                            if sdl3.SDL_GamepadHasSensor(gamepad_ptr, sdl3.SDL_SENSOR_GYRO):
+                                print("GYRO sensor found")
+                                sdl3.SDL_SetGamepadSensorEnabled(gamepad_ptr, sdl3.SDL_SENSOR_GYRO, c_bool(True))
                             self.opened_gamepads[instance_id] = gamepad_ptr
                             name = sdl3.SDL_GetGamepadName(gamepad_ptr).decode('utf-8')
                             print(f"🎮 Gamepad Connected: {name} (ID: {instance_id})")
@@ -60,6 +69,11 @@ class Sdl:
                         raw_value = event.gaxis.value # Range: -32768 to 32767
                         self.handle_gamepad_axis(axis_id, raw_value)
 
+                    case sdl3.SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
+                        sensor_id = event.gsensor.sensor
+                        sensor_data = event.gsensor.data
+                        self.handle_gamepad_motion(sensor_id, sensor_data)
+                self.nx.set_controller_input(self.controller_index, self.input_packet)
 
     def handle_gamepad_button(self, button_id: sdl3.SDL_GamepadButton, is_pressed: bool):
         match button_id:
@@ -93,7 +107,6 @@ class Sdl:
                 self.input_packet["L_STICK"]["PRESSED"] = is_pressed
             case sdl3.SDL_GAMEPAD_BUTTON_RIGHT_STICK:
                 self.input_packet["R_STICK"]["PRESSED"] = is_pressed
-        self.nx.set_controller_input(self.controller_index, self.input_packet)
 
     def handle_gamepad_axis(self, axis_id: sdl3.SDL_GamepadAxis, raw_value):
         # Normalize trigger/stick values between -100.0 and 100.0 (or 0.0 to 100.0 for triggers)
@@ -117,7 +130,17 @@ class Sdl:
                 self.input_packet["R_STICK"]["X_VALUE"] = normalized
             case sdl3.SDL_GAMEPAD_AXIS_RIGHTY:
                 self.input_packet["R_STICK"]["Y_VALUE"] = -normalized
-        self.nx.set_controller_input(self.controller_index, self.input_packet)
+
+    def handle_gamepad_motion(self, sensor_type: sdl3.SDL_SensorType, sensor_data):
+        match sensor_type:
+            case sdl3.SDL_SENSOR_ACCEL:
+                self.input_packet["ACCEL"]["X_VALUE"] = sensor_data[0] / sdl3.SDL_STANDARD_GRAVITY
+                self.input_packet["ACCEL"]["Y_VALUE"] = sensor_data[1] / sdl3.SDL_STANDARD_GRAVITY
+                self.input_packet["ACCEL"]["Z_VALUE"] = sensor_data[2] / sdl3.SDL_STANDARD_GRAVITY
+            case sdl3.SDL_SENSOR_GYRO:
+                self.input_packet["GYRO"]["PITCH"] = math.degrees(sensor_data[0])
+                self.input_packet["GYRO"]["YAW"] = math.degrees(sensor_data[1])
+                self.input_packet["GYRO"]["ROLL"] = math.degrees(sensor_data[2])
 
 if __name__ == "__main__":
     try:

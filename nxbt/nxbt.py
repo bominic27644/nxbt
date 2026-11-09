@@ -45,6 +45,19 @@ DIRECT_INPUT_PACKET = {
         "RS_RIGHT": False,
         "RS_DOWN": False,
     },
+    #Motion Data
+    #unit is Gs (1 G is 9.80m/s^2
+    "ACCEL" : {
+        "X_VALUE": 0,
+        "Y_VALUE": 0,
+        "Z_VALUE": 0,
+    },
+    #unit is deg/s
+    "GYRO": {
+        "PITCH": 0,
+        "ROLL": 0,
+        "YAW": 0,
+    },
     # Dpad
     "DPAD_UP": False,
     "DPAD_LEFT": False,
