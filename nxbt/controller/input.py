@@ -497,9 +497,9 @@ class InputParser:
         accel_x = int(round(accel["X_VALUE"] / 0.000244))
         accel_y = int(round(accel["Y_VALUE"] / 0.000244))
         accel_z = int(round(accel["Z_VALUE"] / 0.000244))
-        gyro_pitch = int(round(gyro["PITCH"] / 0.070))
-        gyro_roll = int(round(gyro["ROLL"] / 0.070))
-        gyro_yaw = int(round(gyro["YAW"] / 0.070))
+        gyro_pitch = int(round(gyro["PITCH"] / 0.06103))
+        gyro_roll = int(round(gyro["ROLL"] / 0.06103))
+        gyro_yaw = int(round(gyro["YAW"] / 0.06103))
         imu_data = []
         i = 0
         while i < 3:
