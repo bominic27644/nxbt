@@ -5,6 +5,7 @@ import sdl3
 import sys
 import ctypes
 import math
+import time
 
 class Sdl:
     def __init__(
@@ -61,19 +62,19 @@ class Sdl:
                         button_id = event.gbutton.button
                         is_pressed = event.gbutton.down
                         self.handle_gamepad_button(button_id, is_pressed)
-
                     # --- Gamepad Axis Events (Thumbsticks & Triggers) ---
                     case sdl3.SDL_EVENT_GAMEPAD_AXIS_MOTION:
                         instance_id = event.gaxis.which
                         axis_id = event.gaxis.axis
                         raw_value = event.gaxis.value # Range: -32768 to 32767
                         self.handle_gamepad_axis(axis_id, raw_value)
-
                     case sdl3.SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
                         sensor_id = event.gsensor.sensor
                         sensor_data = event.gsensor.data
                         self.handle_gamepad_motion(sensor_id, sensor_data)
-                self.nx.set_controller_input(self.controller_index, self.input_packet)
+            self.nx.set_controller_input(self.controller_index, self.input_packet)
+            #sleep so data is not sent too quickly
+            time.sleep(1 / 120)
 
     def handle_gamepad_button(self, button_id: sdl3.SDL_GamepadButton, is_pressed: bool):
         match button_id:
